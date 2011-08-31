@@ -39,7 +39,7 @@ class SingleServerIRCBot(SimpleIRCClient):
 
     The bot keeps track of the channels it has joined, the other
     clients that are present in the channels and which of those that
-    have operator, halfoperator or voice modes.  The "database" is kept in the
+    have operator, or voice modes.  The "database" is kept in the
     self.channels attribute, which is an IRCDict of Channels.
     """
     def __init__(self, server_list, nickname, realname, reconnection_interval=60):
@@ -154,9 +154,6 @@ class SingleServerIRCBot(SimpleIRCClient):
             elif nick[0] == "+":
                 nick = nick[1:]
                 self.channels[ch].set_mode("v", nick)
-            elif nick[0] == "%":
-                nick = nick[1:]
-                self.channels[ch].set_mode("h", nick)
             self.channels[ch].add_user(nick)
 
     def _on_nick(self, c, e):
@@ -320,7 +317,6 @@ class Channel:
     def __init__(self):
         self.userdict = IRCDict()
         self.operdict = IRCDict()
-        self.halfoperdict = IRCDict()
         self.voiceddict = IRCDict()
         self.modes = {}
 
@@ -332,10 +328,6 @@ class Channel:
         """Returns an unsorted list of the channel's operators."""
         return self.operdict.keys()
         
-    def halfopers(self):
-        """Returns an unsorted list of the channel's halfoperators."""
-        return self.halfoperdict.keys()
-
     def voiced(self):
         """Returns an unsorted list of the persons that have voice
         mode set in the channel."""
@@ -349,9 +341,6 @@ class Channel:
         """Check whether a user has operator status in the channel."""
         return nick in self.operdict
 
-    def is_halfoper(self, nick):
-        """Check whether a user has halfoperator status in the channel."""
-        return nick in self.halfoperdict
 
     def is_voiced(self, nick):
         """Check whether a user has voice mode set in the channel."""
@@ -361,7 +350,7 @@ class Channel:
         self.userdict[nick] = 1
 
     def remove_user(self, nick):
-        for d in self.userdict, self.operdict, self.halfoperdict, self.voiceddict:
+        for d in self.userdict, self.operdict, self.voiceddict:
             if nick in d:
                 del d[nick]
 
@@ -371,9 +360,6 @@ class Channel:
         if before in self.operdict:
             self.operdict[after] = 1
             del self.operdict[before]
-        if before in self.halfoperdict:
-            self.halfoperdict[after] = 1
-            del self.halfoperdict[before]
         if before in self.voiceddict:
             self.voiceddict[after] = 1
             del self.voiceddict[before]
@@ -389,8 +375,6 @@ class Channel:
         """
         if mode == "o":
             self.operdict[value] = 1
-        elif mode == "h":
-            self.halfoperdict[value] = 1
         elif mode == "v":
             self.voiceddict[value] = 1
         else:
@@ -408,8 +392,6 @@ class Channel:
         try:
             if mode == "o":
                 del self.operdict[value]
-            elif mode == "h":
-                del self.halfoperdict[value]
             elif mode == "v":
                 del self.voiceddict[value]
             else:
